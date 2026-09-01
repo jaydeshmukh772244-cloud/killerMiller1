@@ -602,9 +602,9 @@ export default function ReportsScreen() {
               <FormField label="गावाचे नाव" value={sputumVillageName} onChangeText={setSputumVillageName} placeholder="गाव" colors={colors} />
               <View style={styles.twoColumns}>
                 <View style={styles.column}><FormField label="थुकी नमुना घेतल्याचा दिनांक" value={sputumCollectedDate} onChangeText={setSputumCollectedDate} placeholder="DD/MM/YYYY" keyboardType="number-pad" colors={colors} /></View>
-                <View style={styles.column}><FormField label="थुकी नमुना तपासणीचा दिनांक" value={sputumTestDate} onChangeText={setSputumTestDate} placeholder="DD/MM/YYYY" keyboardType="number-pad" colors={colors} /></View>
+                <View style={styles.column}><FormField label="थुंकी नमुना तपासणीसाठी पाठवलेला दिनांक" value={sputumTestDate} onChangeText={setSputumTestDate} placeholder="DD/MM/YYYY" keyboardType="number-pad" colors={colors} /></View>
               </View>
-              <FormField label="तपासणी करणाऱ्या कर्मचाऱ्याचे नाव" value={sputumWorkerName} onChangeText={setSputumWorkerName} placeholder="कर्मचाऱ्याचे नाव" colors={colors} />
+              <FormField label="शोधणाऱ्या कर्मचाऱ्याचे नाव" value={sputumWorkerName} onChangeText={setSputumWorkerName} placeholder="कर्मचाऱ्याचे नाव" colors={colors} />
               <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>तपासणीचा प्रकार *</Text>
               <View style={styles.testTypeChoices}>
                 <TestTypeChoice label="Sputum" selected={sputumTestType === 'sputum'} onPress={() => setSputumTestType('sputum')} colors={colors} />
@@ -695,8 +695,8 @@ function SputumEntryCard({ entry, index, colors, onEdit, onRemove }: { entry: Sp
     <View style={styles.entryCopy}>
       <Text style={[styles.entryName, { color: colors.foreground }]}>{entry.personName}</Text>
       <Text style={[styles.entryMeta, { color: colors.mutedForeground }]}>{entry.age || '—'} वर्षे · {entry.gender || '—'} · {entry.villageName || 'गाव नमूद नाही'}</Text>
-      <Text style={[styles.entryMeta, { color: colors.mutedForeground }]}>{entry.testType === 'cbnaat' ? 'CBNAAT' : 'Sputum'} · नमुना: {entry.sampleCollectedDate || '—'} · तपासणी: {entry.sampleTestDate || '—'}</Text>
-      {entry.workerName ? <Text style={[styles.entryCause, { color: colors.mutedForeground }]}>कर्मचारी: {entry.workerName}</Text> : null}
+      <Text style={[styles.entryMeta, { color: colors.mutedForeground }]}>{entry.testType === 'cbnaat' ? 'CBNAAT' : 'Sputum'} · नमुना: {entry.sampleCollectedDate || '—'} · पाठवलेला दिनांक: {entry.sampleTestDate || '—'}</Text>
+      {entry.workerName ? <Text style={[styles.entryCause, { color: colors.mutedForeground }]}>शोधणारा कर्मचारी: {entry.workerName}</Text> : null}
     </View>
     <View style={styles.entryActions}>
       <Pressable accessibilityRole="button" accessibilityLabel={`${entry.personName} ची थुकी नमुना नोंद बदला`} onPress={onEdit} hitSlop={10}><Feather name="edit-2" size={16} color={colors.primary} /></Pressable>
@@ -814,7 +814,7 @@ function buildSputumReportHtml({ profile, sputumSampleReports, monthLabel }: { p
       </div>
       <h1>थुकी नमुने अहवाल</h1>
       <table><thead><tr>
-        <th>अ.नं.</th><th>रुग्णाचे नाव</th><th>वय</th><th>लिंग</th><th>गावाचे नाव</th><th>थुकी नमुना घेतल्याचा दिनांक</th><th>थुकी नमुना तपासणीचा दिनांक</th><th>तपासणी करणाऱ्या कर्मचाऱ्याचे नाव</th><th>Sputum/CBNAAT</th>
+        <th>अ.नं.</th><th>रुग्णाचे नाव</th><th>वय</th><th>लिंग</th><th>गावाचे नाव</th><th>थुकी नमुना घेतल्याचा दिनांक</th><th>थुंकी नमुना तपासणीसाठी पाठवलेला दिनांक</th><th>शोधणाऱ्या कर्मचाऱ्याचे नाव</th><th>Sputum/CBNAAT</th>
       </tr></thead><tbody>${rows || '<tr><td colspan="9">कोणतीही नोंद नाही</td></tr>'}</tbody></table>
       <div class="signatures">
         <div>सविनय सादर<br>वैद्यकीय अधिकारी<br>प्राथमिक आरोग्य केंद्र: ${escapeHtml(profile.primaryHealthCenter || '—')}</div>
