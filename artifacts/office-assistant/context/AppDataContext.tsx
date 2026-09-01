@@ -77,6 +77,21 @@ export interface LeprosyReportEntry {
   searchDate: string;
 }
 
+export interface WaterTclReportEntry {
+  id: string;
+  villageName: string;
+  previousBalance: string;
+  receivedThisMonth: string;
+  totalStock: string;
+  usedStock: string;
+  closingBalance: string;
+  waterSamplesCollected: string;
+  waterSamplesSent: string;
+  tclSuitable: string;
+  tclUnsuitable: string;
+  remark: string;
+}
+
 export interface ReportPeriod {
   month: number;
   year: number;
@@ -99,6 +114,7 @@ interface AppDataContextValue {
   cataractSurgeryReports: CataractSurgeryReportEntry[];
   sputumSampleReports: SputumSampleReportEntry[];
   leprosyReports: LeprosyReportEntry[];
+  waterTclReports: WaterTclReportEntry[];
   reportPeriod: ReportPeriod;
   hydrated: boolean;
   addEntry: (entry: Omit<DiaryEntry, 'id' | 'date'> & { date?: string }) => void;
@@ -119,6 +135,9 @@ interface AppDataContextValue {
   addLeprosyReport: (report: Omit<LeprosyReportEntry, 'id'>) => void;
   updateLeprosyReport: (id: string, report: Omit<LeprosyReportEntry, 'id'>) => void;
   removeLeprosyReport: (id: string) => void;
+  addWaterTclReport: (report: Omit<WaterTclReportEntry, 'id'>) => void;
+  updateWaterTclReport: (id: string, report: Omit<WaterTclReportEntry, 'id'>) => void;
+  removeWaterTclReport: (id: string) => void;
   updateReportPeriod: (period: ReportPeriod) => void;
   updateProfile: (profile: Profile) => void;
 }
@@ -191,6 +210,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [cataractSurgeryReports, setCataractSurgeryReports] = useState<CataractSurgeryReportEntry[]>([]);
   const [sputumSampleReports, setSputumSampleReports] = useState<SputumSampleReportEntry[]>([]);
   const [leprosyReports, setLeprosyReports] = useState<LeprosyReportEntry[]>([]);
+  const [waterTclReports, setWaterTclReports] = useState<WaterTclReportEntry[]>([]);
   const [reportPeriod, setReportPeriod] = useState<ReportPeriod>(defaultReportPeriod);
   const [hydrated, setHydrated] = useState(false);
 
@@ -208,6 +228,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
             cataractSurgeryReports?: CataractSurgeryReportEntry[];
             sputumSampleReports?: SputumSampleReportEntry[];
             leprosyReports?: LeprosyReportEntry[];
+            waterTclReports?: WaterTclReportEntry[];
             reportPeriod?: ReportPeriod;
           };
           if (saved.profile) {
@@ -245,6 +266,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
           if (Array.isArray(saved.cataractSurgeryReports)) setCataractSurgeryReports(saved.cataractSurgeryReports);
           if (Array.isArray(saved.sputumSampleReports)) setSputumSampleReports(saved.sputumSampleReports);
           if (Array.isArray(saved.leprosyReports)) setLeprosyReports(saved.leprosyReports);
+          if (Array.isArray(saved.waterTclReports)) setWaterTclReports(saved.waterTclReports);
           if (saved.reportPeriod && Number.isInteger(saved.reportPeriod.month) && saved.reportPeriod.month >= 1 && saved.reportPeriod.month <= 12 && Number.isInteger(saved.reportPeriod.year)) {
             setReportPeriod(saved.reportPeriod);
           }
@@ -260,8 +282,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!hydrated) return;
-    void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ profile, entries, deathReports, cataractReports, cataractSurgeryReports, sputumSampleReports, leprosyReports, reportPeriod }));
-  }, [profile, entries, deathReports, cataractReports, cataractSurgeryReports, sputumSampleReports, leprosyReports, reportPeriod, hydrated]);
+    void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ profile, entries, deathReports, cataractReports, cataractSurgeryReports, sputumSampleReports, leprosyReports, waterTclReports, reportPeriod }));
+  }, [profile, entries, deathReports, cataractReports, cataractSurgeryReports, sputumSampleReports, leprosyReports, waterTclReports, reportPeriod, hydrated]);
 
   const value = useMemo<AppDataContextValue>(
     () => ({
@@ -272,6 +294,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       cataractSurgeryReports,
       sputumSampleReports,
       leprosyReports,
+      waterTclReports,
       reportPeriod,
       hydrated,
       addEntry: (entry) =>
@@ -303,10 +326,13 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       addLeprosyReport: (report) => setLeprosyReports((current) => [...current, { ...report, id: makeId('leprosy') }]),
       updateLeprosyReport: (id, report) => setLeprosyReports((current) => current.map((entry) => (entry.id === id ? { ...report, id } : entry))),
       removeLeprosyReport: (id) => setLeprosyReports((current) => current.filter((report) => report.id !== id)),
+      addWaterTclReport: (report) => setWaterTclReports((current) => [...current, { ...report, id: makeId('water-tcl') }]),
+      updateWaterTclReport: (id, report) => setWaterTclReports((current) => current.map((entry) => (entry.id === id ? { ...report, id } : entry))),
+      removeWaterTclReport: (id) => setWaterTclReports((current) => current.filter((report) => report.id !== id)),
       updateReportPeriod: (period) => setReportPeriod(period),
       updateProfile: (nextProfile) => setProfile(nextProfile),
     }),
-    [cataractReports, cataractSurgeryReports, deathReports, entries, hydrated, leprosyReports, profile, reportPeriod, sputumSampleReports],
+    [cataractReports, cataractSurgeryReports, deathReports, entries, hydrated, leprosyReports, profile, reportPeriod, sputumSampleReports, waterTclReports],
   );
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;

@@ -5,13 +5,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { useAppData } from '@/context/AppDataContext';
-import type { CataractReportEntry, CataractSurgeryReportEntry, DeathReportEntry, LeprosyReportEntry, Profile, SputumSampleReportEntry } from '@/context/AppDataContext';
+import type { CataractReportEntry, CataractSurgeryReportEntry, DeathReportEntry, LeprosyReportEntry, Profile, SputumSampleReportEntry, WaterTclReportEntry } from '@/context/AppDataContext';
 import { useColors } from '@/hooks/useColors';
 
 export default function ReportsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { profile, deathReports, addDeathReport, updateDeathReport, removeDeathReport, cataractReports, addCataractReport, updateCataractReport, removeCataractReport, cataractSurgeryReports, addCataractSurgeryReport, updateCataractSurgeryReport, removeCataractSurgeryReport, sputumSampleReports, addSputumSampleReport, updateSputumSampleReport, removeSputumSampleReport, leprosyReports, addLeprosyReport, updateLeprosyReport, removeLeprosyReport, reportPeriod, updateReportPeriod } = useAppData();
+  const { profile, deathReports, addDeathReport, updateDeathReport, removeDeathReport, cataractReports, addCataractReport, updateCataractReport, removeCataractReport, cataractSurgeryReports, addCataractSurgeryReport, updateCataractSurgeryReport, removeCataractSurgeryReport, sputumSampleReports, addSputumSampleReport, updateSputumSampleReport, removeSputumSampleReport, leprosyReports, addLeprosyReport, updateLeprosyReport, removeLeprosyReport, waterTclReports, addWaterTclReport, updateWaterTclReport, removeWaterTclReport, reportPeriod, updateReportPeriod } = useAppData();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [personName, setPersonName] = useState('');
@@ -62,6 +62,19 @@ export default function ReportsScreen() {
   const [leprosySpotCount, setLeprosySpotCount] = useState<'1-5' | 'more-than-5' | ''>('');
   const [leprosySpotLocation, setLeprosySpotLocation] = useState('');
   const [leprosySearchDate, setLeprosySearchDate] = useState('');
+  const [showWaterTclForm, setShowWaterTclForm] = useState(false);
+  const [editingWaterTclId, setEditingWaterTclId] = useState<string | null>(null);
+  const [waterVillageName, setWaterVillageName] = useState('');
+  const [waterPreviousBalance, setWaterPreviousBalance] = useState('');
+  const [waterReceivedThisMonth, setWaterReceivedThisMonth] = useState('');
+  const [waterTotalStock, setWaterTotalStock] = useState('');
+  const [waterUsedStock, setWaterUsedStock] = useState('');
+  const [waterClosingBalance, setWaterClosingBalance] = useState('');
+  const [waterSamplesCollected, setWaterSamplesCollected] = useState('');
+  const [waterSamplesSent, setWaterSamplesSent] = useState('');
+  const [waterTclSuitable, setWaterTclSuitable] = useState('');
+  const [waterTclUnsuitable, setWaterTclUnsuitable] = useState('');
+  const [waterRemark, setWaterRemark] = useState('');
 
   useEffect(() => {
     setPeriodMonth(String(reportPeriod.month));
@@ -378,6 +391,97 @@ export default function ReportsScreen() {
       });
     } catch (error) {
       console.error('Leprosy PDF export failed', error);
+      Alert.alert('PDF तयार करता आला नाही', 'कृपया पुन्हा प्रयत्न करा.');
+    }
+  };
+
+  const resetWaterTclForm = () => {
+    setWaterVillageName('');
+    setWaterPreviousBalance('');
+    setWaterReceivedThisMonth('');
+    setWaterTotalStock('');
+    setWaterUsedStock('');
+    setWaterClosingBalance('');
+    setWaterSamplesCollected('');
+    setWaterSamplesSent('');
+    setWaterTclSuitable('');
+    setWaterTclUnsuitable('');
+    setWaterRemark('');
+  };
+
+  const saveWaterTclReport = () => {
+    if (!waterVillageName.trim()) {
+      Alert.alert('माहिती अपुरी आहे', 'गावाचे नाव भरा.');
+      return;
+    }
+    const entry: Omit<WaterTclReportEntry, 'id'> = {
+      villageName: waterVillageName.trim(),
+      previousBalance: waterPreviousBalance.trim(),
+      receivedThisMonth: waterReceivedThisMonth.trim(),
+      totalStock: waterTotalStock.trim(),
+      usedStock: waterUsedStock.trim(),
+      closingBalance: waterClosingBalance.trim(),
+      waterSamplesCollected: waterSamplesCollected.trim(),
+      waterSamplesSent: waterSamplesSent.trim(),
+      tclSuitable: waterTclSuitable.trim(),
+      tclUnsuitable: waterTclUnsuitable.trim(),
+      remark: waterRemark.trim(),
+    };
+    if (editingWaterTclId) {
+      updateWaterTclReport(editingWaterTclId, entry);
+    } else {
+      addWaterTclReport(entry);
+    }
+    resetWaterTclForm();
+    setEditingWaterTclId(null);
+    setShowWaterTclForm(false);
+  };
+
+  const toggleWaterTclForm = () => {
+    if (showWaterTclForm) {
+      resetWaterTclForm();
+      setEditingWaterTclId(null);
+    }
+    setShowWaterTclForm((value) => !value);
+  };
+
+  const editWaterTclReport = (entry: WaterTclReportEntry) => {
+    setEditingWaterTclId(entry.id);
+    setWaterVillageName(entry.villageName);
+    setWaterPreviousBalance(entry.previousBalance);
+    setWaterReceivedThisMonth(entry.receivedThisMonth);
+    setWaterTotalStock(entry.totalStock);
+    setWaterUsedStock(entry.usedStock);
+    setWaterClosingBalance(entry.closingBalance);
+    setWaterSamplesCollected(entry.waterSamplesCollected);
+    setWaterSamplesSent(entry.waterSamplesSent);
+    setWaterTclSuitable(entry.tclSuitable);
+    setWaterTclUnsuitable(entry.tclUnsuitable);
+    setWaterRemark(entry.remark);
+    setShowWaterTclForm(true);
+  };
+
+  const exportWaterTclPdf = async () => {
+    const html = buildWaterTclReportHtml({ profile, waterTclReports, monthLabel });
+    try {
+      if (Platform.OS === 'web') {
+        window.print();
+        return;
+      }
+      const Print = await import('expo-print');
+      const Sharing = await import('expo-sharing');
+      const { uri } = await Print.printToFileAsync({ html });
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert('PDF तयार आहे', 'या device वर share सुविधा उपलब्ध नाही.');
+        return;
+      }
+      await Sharing.shareAsync(uri, {
+        mimeType: 'application/pdf',
+        dialogTitle: 'पाणी नमुने व टी. सी. एल. अहवाल शेअर करा',
+        UTI: 'com.adobe.pdf',
+      });
+    } catch (error) {
+      console.error('Water and TCL PDF export failed', error);
       Alert.alert('PDF तयार करता आला नाही', 'कृपया पुन्हा प्रयत्न करा.');
     }
   };
@@ -768,6 +872,64 @@ export default function ReportsScreen() {
               <View style={[styles.signatureColumn, styles.signatureRight]}><Text style={[styles.signatureText, { color: colors.foreground }]}>नाव: {profile.name || '—'}</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>आरोग्य सेवक</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>उपकेंद्र: {profile.subCenter || '—'}</Text></View>
             </View>
           </View>
+          <View style={styles.secondReportSection}>
+            <View style={[styles.sectionBanner, { backgroundColor: colors.secondary }]}>
+              <View style={[styles.sectionIcon, { backgroundColor: colors.card }]}><Feather name="droplet" size={18} color={colors.primary} /></View>
+              <View style={styles.sectionCopy}><Text style={[styles.sectionEyebrow, { color: colors.primary }]}>REPORT SECTION 6</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>पाणी नमुने व टी. सी. एल. अहवाल</Text></View>
+              <Pressable testID="add-water-tcl-report" accessibilityRole="button" accessibilityLabel="नवीन पाणी नमुने व टी. सी. एल. नोंद जोडा" onPress={toggleWaterTclForm} style={({ pressed }) => [styles.sectionAddButton, { backgroundColor: colors.card, opacity: pressed ? 0.7 : 1 }]}><Feather name={showWaterTclForm ? 'x' : 'plus'} size={17} color={colors.primary} /></Pressable>
+            </View>
+            <View style={[styles.reportPaper, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.paperTop}>
+                <View style={styles.paperHeading}>
+                  <Text style={[styles.facilityName, { color: colors.foreground }]}>प्राथमिक आरोग्य केंद्र {profile.primaryHealthCenter || '—'}</Text>
+                  <Text style={[styles.facilityMeta, { color: colors.mutedForeground }]}>तालुका: {profile.taluka || '—'}  जिल्हा: {profile.district || '—'}</Text>
+                  <Text style={[styles.facilityMeta, { color: colors.mutedForeground }]}>उपकेंद्र: {profile.subCenter || '—'}</Text>
+                </View>
+                <Text style={[styles.monthLabel, { color: colors.foreground }]}>{monthLabel}</Text>
+              </View>
+              <View style={[styles.reportTitleRule, { borderTopColor: colors.border }]} />
+              <Text style={[styles.reportTitle, { color: colors.foreground }]}>पाणी नमुने व टी. सी. एल. अहवाल</Text>
+              <Text style={[styles.reportSubtitle, { color: colors.mutedForeground }]}>{waterTclReports.length} गावांच्या नोंदी</Text>
+            </View>
+            {showWaterTclForm ? <View style={[styles.formCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.formHeading}><View><Text style={[styles.formTitle, { color: colors.foreground }]}>{editingWaterTclId ? 'पाणी नमुने व टी. सी. एल. नोंद बदला' : 'नवीन पाणी नमुने व टी. सी. एल. नोंद'}</Text><Text style={[styles.formHint, { color: colors.mutedForeground }]}>चित्रातील नमुन्याप्रमाणे गावनिहाय साठा आणि नमुना माहिती भरा.</Text></View><Feather name="droplet" size={18} color={colors.primary} /></View>
+              <FormField label="गावाचे नाव *" value={waterVillageName} onChangeText={setWaterVillageName} placeholder="गाव" colors={colors} />
+              <View style={styles.twoColumns}>
+                <View style={styles.column}><FormField label="मागील शिल्लक" value={waterPreviousBalance} onChangeText={setWaterPreviousBalance} placeholder="संख्या" keyboardType="number-pad" colors={colors} /></View>
+                <View style={styles.column}><FormField label="चालू महिन्यात मिळालेला" value={waterReceivedThisMonth} onChangeText={setWaterReceivedThisMonth} placeholder="संख्या" keyboardType="number-pad" colors={colors} /></View>
+              </View>
+              <View style={styles.twoColumns}>
+                <View style={styles.column}><FormField label="एकूण साठा" value={waterTotalStock} onChangeText={setWaterTotalStock} placeholder="संख्या" keyboardType="number-pad" colors={colors} /></View>
+                <View style={styles.column}><FormField label="खर्च साठा" value={waterUsedStock} onChangeText={setWaterUsedStock} placeholder="संख्या" keyboardType="number-pad" colors={colors} /></View>
+              </View>
+              <FormField label="महिन्याखेर शिल्लक साठा" value={waterClosingBalance} onChangeText={setWaterClosingBalance} placeholder="संख्या" keyboardType="number-pad" colors={colors} />
+              <View style={styles.twoColumns}>
+                <View style={styles.column}><FormField label="पाणी नमुने - मा." value={waterSamplesCollected} onChangeText={setWaterSamplesCollected} placeholder="संख्या" keyboardType="number-pad" colors={colors} /></View>
+                <View style={styles.column}><FormField label="पाणी नमुने - प्र." value={waterSamplesSent} onChangeText={setWaterSamplesSent} placeholder="संख्या" keyboardType="number-pad" colors={colors} /></View>
+              </View>
+              <View style={styles.twoColumns}>
+                <View style={styles.column}><FormField label="टी. सी. एल. - योग्य" value={waterTclSuitable} onChangeText={setWaterTclSuitable} placeholder="संख्या" keyboardType="number-pad" colors={colors} /></View>
+                <View style={styles.column}><FormField label="टी. सी. एल. - अयोग्य" value={waterTclUnsuitable} onChangeText={setWaterTclUnsuitable} placeholder="संख्या" keyboardType="number-pad" colors={colors} /></View>
+              </View>
+              <FormField label="शेरा" value={waterRemark} onChangeText={setWaterRemark} placeholder="अतिरिक्त माहिती" colors={colors} />
+              <Pressable testID="save-water-tcl-report" onPress={saveWaterTclReport} style={({ pressed }) => [styles.saveButton, { backgroundColor: colors.primary, opacity: pressed ? 0.78 : 1 }]}><Feather name="check" size={17} color="#FFFFFF" /><Text style={styles.saveText}>{editingWaterTclId ? 'बदल जतन करा' : 'नोंद जतन करा'}</Text></Pressable>
+            </View> : null}
+            <View style={styles.entriesHeader}>
+              <View><Text style={[styles.entriesTitle, { color: colors.foreground }]}>गावनिहाय नोंदी</Text><Text style={[styles.entriesSubtitle, { color: colors.mutedForeground }]}>साठा, पाणी नमुने आणि टी. सी. एल. तपशील.</Text></View>
+              <View style={[styles.countPill, { backgroundColor: colors.secondary }]}><Text style={[styles.countPillText, { color: colors.primary }]}>{waterTclReports.length}</Text></View>
+            </View>
+            {waterTclReports.length ? waterTclReports.map((entry, index) => (
+              <WaterTclEntryCard key={entry.id} entry={entry} index={index} colors={colors} onEdit={() => editWaterTclReport(entry)} onRemove={() => Alert.alert('नोंद हटवायची?', `${entry.villageName} गावाची नोंद हटवायची आहे का?`, [{ text: 'रद्द करा', style: 'cancel' }, { text: 'हटवा', style: 'destructive', onPress: () => removeWaterTclReport(entry.id) }])} />
+            )) : <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}><Feather name="droplet" size={24} color={colors.mutedForeground} /><Text style={[styles.emptyTitle, { color: colors.foreground }]}>अजून पाणी नमुना नोंद नाही</Text><Text style={[styles.emptyText, { color: colors.mutedForeground }]}>या sectionमधील + बटन दाबून गावाची नोंद जोडा.</Text></View>}
+            {waterTclReports.length ? <View style={[styles.exportCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.exportHeading}><View><Text style={[styles.exportTitle, { color: colors.foreground }]}>पाणी नमुने व टी. सी. एल. रिपोर्ट तयार आहे?</Text><Text style={[styles.exportText, { color: colors.mutedForeground }]}>नोंदी तपासल्यानंतर PDF शेअर करा.</Text></View><Feather name="file-text" size={20} color={colors.primary} /></View>
+              <Pressable testID="share-water-tcl-report-pdf" onPress={() => void exportWaterTclPdf()} style={({ pressed }) => [styles.exportButton, { backgroundColor: colors.primary, opacity: pressed ? 0.78 : 1 }]}><Feather name="share-2" size={15} color="#FFFFFF" /><Text style={styles.exportButtonText}>PDF शेअर करा</Text></Pressable>
+            </View> : null}
+            <View style={[styles.signatureArea, { backgroundColor: colors.secondary }]}>
+              <View style={styles.signatureColumn}><Text style={[styles.signatureText, { color: colors.foreground }]}>सविनय सादर</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>वैद्यकीय अधिकारी</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>प्राथमिक आरोग्य केंद्र: {profile.primaryHealthCenter || '—'}</Text></View>
+              <View style={[styles.signatureColumn, styles.signatureRight]}><Text style={[styles.signatureText, { color: colors.foreground }]}>नाव: {profile.name || '—'}</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>आरोग्य सेवक</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>उपकेंद्र: {profile.subCenter || '—'}</Text></View>
+            </View>
+          </View>
         </View>
       </KeyboardAwareScrollViewCompat>
     </View>
@@ -872,6 +1034,24 @@ function LeprosyEntryCard({ entry, index, colors, onEdit, onRemove }: { entry: L
   </View>;
 }
 
+function WaterTclEntryCard({ entry, index, colors, onEdit, onRemove }: { entry: WaterTclReportEntry; index: number; colors: ReturnType<typeof useColors>; onEdit: () => void; onRemove: () => void }) {
+  return <View style={[styles.entryCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <View style={[styles.entryNumber, { backgroundColor: colors.secondary }]}><Text style={[styles.entryNumberText, { color: colors.primary }]}>{index + 1}</Text></View>
+    <View style={styles.entryCopy}>
+      <Text style={[styles.entryName, { color: colors.foreground }]}>{entry.villageName}</Text>
+      <Text style={[styles.entryMeta, { color: colors.mutedForeground }]}>मागील: {entry.previousBalance || '—'} · मिळालेले: {entry.receivedThisMonth || '—'} · एकूण: {entry.totalStock || '—'}</Text>
+      <Text style={[styles.entryMeta, { color: colors.mutedForeground }]}>खर्च: {entry.usedStock || '—'} · महिनाअखेर शिल्लक: {entry.closingBalance || '—'}</Text>
+      <Text style={[styles.entryMeta, { color: colors.mutedForeground }]}>पाणी नमुने मा.: {entry.waterSamplesCollected || '—'} · प्र.: {entry.waterSamplesSent || '—'}</Text>
+      <Text style={[styles.entryMeta, { color: colors.mutedForeground }]}>टी. सी. एल. योग्य: {entry.tclSuitable || '—'} · अयोग्य: {entry.tclUnsuitable || '—'}</Text>
+      {entry.remark ? <Text style={[styles.entryCause, { color: colors.mutedForeground }]}>शेरा: {entry.remark}</Text> : null}
+    </View>
+    <View style={styles.entryActions}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`${entry.villageName} गावाची पाणी नमुना नोंद बदला`} onPress={onEdit} hitSlop={10}><Feather name="edit-2" size={16} color={colors.primary} /></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel={`${entry.villageName} गावाची पाणी नमुना नोंद हटवा`} onPress={onRemove} hitSlop={10}><Feather name="trash-2" size={16} color={colors.destructive} /></Pressable>
+    </View>
+  </View>;
+}
+
 function EyeChoice({ label, value, selected, onPress, colors }: { label: string; value: 'right' | 'left'; selected: boolean; onPress: () => void; colors: ReturnType<typeof useColors> }) {
   return <Pressable accessibilityRole="radio" accessibilityState={{ selected }} onPress={onPress} style={({ pressed }) => [styles.eyeChoice, { borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.secondary : colors.background, opacity: pressed ? 0.75 : 1 }]}>
     <View style={[styles.eyeChoiceDot, { borderColor: selected ? colors.primary : colors.mutedForeground, backgroundColor: selected ? colors.primary : 'transparent' }]} />
@@ -892,6 +1072,85 @@ function SpotCountChoice({ label, selected, onPress, colors }: { label: string; 
     <Feather name={selected ? 'check-square' : 'square'} size={17} color={selected ? colors.primary : colors.mutedForeground} />
     <Text style={[styles.testTypeText, { color: selected ? colors.primary : colors.mutedForeground }]}>{label}</Text>
   </Pressable>;
+}
+
+const sumWaterValues = (values: string[]) => {
+  const numbers = values.map((value) => Number(value)).filter((value) => Number.isFinite(value));
+  return numbers.length ? String(numbers.reduce((total, value) => total + value, 0)) : '';
+};
+
+function buildWaterTclReportHtml({ profile, waterTclReports, monthLabel }: { profile: Profile; waterTclReports: WaterTclReportEntry[]; monthLabel: string }) {
+  const rows = waterTclReports.map((entry, index) => `
+    <tr>
+      <td>${index + 1}</td>
+      <td>${escapeHtml(entry.villageName)}</td>
+      <td>${escapeHtml(entry.previousBalance)}</td>
+      <td>${escapeHtml(entry.receivedThisMonth)}</td>
+      <td>${escapeHtml(entry.totalStock)}</td>
+      <td>${escapeHtml(entry.usedStock)}</td>
+      <td>${escapeHtml(entry.closingBalance)}</td>
+      <td>${escapeHtml(entry.waterSamplesCollected)}</td>
+      <td>${escapeHtml(entry.waterSamplesSent)}</td>
+      <td>${escapeHtml(entry.tclSuitable)}</td>
+      <td>${escapeHtml(entry.tclUnsuitable)}</td>
+      <td>${escapeHtml(entry.remark)}</td>
+    </tr>
+  `).join('');
+  const totals = [
+    sumWaterValues(waterTclReports.map((entry) => entry.previousBalance)),
+    sumWaterValues(waterTclReports.map((entry) => entry.receivedThisMonth)),
+    sumWaterValues(waterTclReports.map((entry) => entry.totalStock)),
+    sumWaterValues(waterTclReports.map((entry) => entry.usedStock)),
+    sumWaterValues(waterTclReports.map((entry) => entry.closingBalance)),
+    sumWaterValues(waterTclReports.map((entry) => entry.waterSamplesCollected)),
+    sumWaterValues(waterTclReports.map((entry) => entry.waterSamplesSent)),
+    sumWaterValues(waterTclReports.map((entry) => entry.tclSuitable)),
+    sumWaterValues(waterTclReports.map((entry) => entry.tclUnsuitable)),
+  ];
+  return `<!doctype html>
+    <html><head><meta charset="utf-8"><title>पाणी नमुने व टी. सी. एल. अहवाल - ${escapeHtml(monthLabel)}</title>
+    <style>
+      @page { size: A4 landscape; margin: 12mm; }
+      body { font-family: Arial, sans-serif; color: #172033; margin: 0; }
+      .top { display: flex; justify-content: space-between; align-items: flex-start; }
+      .center { text-align: center; flex: 1; }
+      .facility { font-size: 18px; font-weight: 700; }
+      .meta { font-size: 12px; margin-top: 5px; }
+      .month { font-size: 13px; font-weight: 700; min-width: 130px; text-align: right; }
+      h1 { font-size: 19px; text-align: center; margin: 20px 0 14px; }
+      table { border-collapse: collapse; width: 100%; font-size: 8.5px; }
+      th, td { border: 1px solid #6f7785; padding: 5px 3px; text-align: center; vertical-align: middle; }
+      th { background: #eef2ff; font-weight: 700; }
+      td:nth-child(2), td:nth-child(12) { text-align: left; }
+      .total-row td { background: #eef2ff; font-weight: 700; }
+      .signatures { display: flex; justify-content: space-between; margin-top: 42px; font-size: 12px; line-height: 1.7; }
+      .right { text-align: right; }
+    </style></head><body>
+      <div class="top">
+        <div style="width:130px"></div>
+        <div class="center">
+          <div class="facility">${escapeHtml(`प्राथमिक आरोग्य केंद्र ${profile.primaryHealthCenter || '—'}`)}</div>
+          <div class="meta">तालुका: ${escapeHtml(profile.taluka || '—')} &nbsp;&nbsp; जिल्हा: ${escapeHtml(profile.district || '—')}</div>
+          <div class="meta">उपकेंद्र: ${escapeHtml(profile.subCenter || '—')}</div>
+        </div>
+        <div class="month">महिना: ${escapeHtml(monthLabel)}</div>
+      </div>
+      <h1>पाणी नमुने व टी. सी. एल. अहवाल</h1>
+      <table>
+        <thead>
+          <tr>
+            <th rowspan="2">अ. नं.</th><th rowspan="2">गावाचे नाव</th><th rowspan="2">मागील<br>शिल्लक</th><th rowspan="2">चालू महिन्यात<br>मिळालेला</th><th rowspan="2">एकूण<br>साठा</th><th rowspan="2">खर्च<br>साठा</th><th rowspan="2">महिन्याखेर<br>शिल्लक साठा</th><th colspan="2">पाणी नमुने</th><th colspan="2">टी. सी. एल.</th><th rowspan="2">शेरा</th>
+          </tr>
+          <tr><th>मा.</th><th>प्र.</th><th>योग्य</th><th>अयोग्य</th></tr>
+        </thead>
+        <tbody>${rows || '<tr><td colspan="12">कोणतीही नोंद नाही</td></tr>'}</tbody>
+        <tfoot><tr class="total-row"><td colspan="2">एकूण</td>${totals.map((total) => `<td>${total}</td>`).join('')}<td></td></tr></tfoot>
+      </table>
+      <div class="signatures">
+        <div>सविनय सादर<br>वैद्यकीय अधिकारी<br>प्राथमिक आरोग्य केंद्र: ${escapeHtml(profile.primaryHealthCenter || '—')}</div>
+        <div class="right">नाव: ${escapeHtml(profile.name || '—')}<br>आरोग्य सेवक<br>उपकेंद्र: ${escapeHtml(profile.subCenter || '—')}</div>
+      </div>
+    </body></html>`;
 }
 
 function buildLeprosyReportHtml({ profile, leprosyReports, monthLabel }: { profile: Profile; leprosyReports: LeprosyReportEntry[]; monthLabel: string }) {
