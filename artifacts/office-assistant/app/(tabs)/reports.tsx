@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { useAppData } from '@/context/AppDataContext';
-import type { CataractReportEntry, CataractSurgeryReportEntry, DeathReportEntry, LeprosyReportEntry, Profile, SputumSampleReportEntry, WaterTclReportEntry } from '@/context/AppDataContext';
+import type { CataractReportEntry, CataractSurgeryReportEntry, DeathReportEntry, LeprosyReportEntry, Profile, SputumSampleReportEntry, Village, WaterTclReportEntry } from '@/context/AppDataContext';
 import { useColors } from '@/hooks/useColors';
 
 export default function ReportsScreen() {
@@ -441,6 +441,9 @@ export default function ReportsScreen() {
     if (showWaterTclForm) {
       resetWaterTclForm();
       setEditingWaterTclId(null);
+    } else {
+      const firstProfileVillage = profile.villages.find((village) => village.name.trim())?.name.trim() || '';
+      if (firstProfileVillage) setWaterVillageName(firstProfileVillage);
     }
     setShowWaterTclForm((value) => !value);
   };
@@ -477,7 +480,7 @@ export default function ReportsScreen() {
       }
       await Sharing.shareAsync(uri, {
         mimeType: 'application/pdf',
-        dialogTitle: 'पाणी नमुने व टी. सी. एल. अहवाल शेअर करा',
+        dialogTitle: 'पाणी नमुने व ओ.टी. अहवाल शेअर करा',
         UTI: 'com.adobe.pdf',
       });
     } catch (error) {
@@ -875,8 +878,8 @@ export default function ReportsScreen() {
           <View style={styles.secondReportSection}>
             <View style={[styles.sectionBanner, { backgroundColor: colors.secondary }]}>
               <View style={[styles.sectionIcon, { backgroundColor: colors.card }]}><Feather name="droplet" size={18} color={colors.primary} /></View>
-              <View style={styles.sectionCopy}><Text style={[styles.sectionEyebrow, { color: colors.primary }]}>REPORT SECTION 6</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>पाणी नमुने व टी. सी. एल. अहवाल</Text></View>
-              <Pressable testID="add-water-tcl-report" accessibilityRole="button" accessibilityLabel="नवीन पाणी नमुने व टी. सी. एल. नोंद जोडा" onPress={toggleWaterTclForm} style={({ pressed }) => [styles.sectionAddButton, { backgroundColor: colors.card, opacity: pressed ? 0.7 : 1 }]}><Feather name={showWaterTclForm ? 'x' : 'plus'} size={17} color={colors.primary} /></Pressable>
+              <View style={styles.sectionCopy}><Text style={[styles.sectionEyebrow, { color: colors.primary }]}>REPORT SECTION 6</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>पाणी नमुने व ओ.टी. अहवाल</Text></View>
+              <Pressable testID="add-water-tcl-report" accessibilityRole="button" accessibilityLabel="नवीन पाणी नमुने व ओ.टी. नोंद जोडा" onPress={toggleWaterTclForm} style={({ pressed }) => [styles.sectionAddButton, { backgroundColor: colors.card, opacity: pressed ? 0.7 : 1 }]}><Feather name={showWaterTclForm ? 'x' : 'plus'} size={17} color={colors.primary} /></Pressable>
             </View>
             <View style={[styles.reportPaper, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.paperTop}>
@@ -888,15 +891,15 @@ export default function ReportsScreen() {
                 <Text style={[styles.monthLabel, { color: colors.foreground }]}>{monthLabel}</Text>
               </View>
               <View style={[styles.reportTitleRule, { borderTopColor: colors.border }]} />
-              <Text style={[styles.reportTitle, { color: colors.foreground }]}>पाणी नमुने व टी. सी. एल. अहवाल</Text>
+              <Text style={[styles.reportTitle, { color: colors.foreground }]}>पाणी नमुने व ओ.टी. अहवाल</Text>
               <Text style={[styles.reportSubtitle, { color: colors.mutedForeground }]}>{waterTclReports.length} गावांच्या नोंदी</Text>
             </View>
             {showWaterTclForm ? <View style={[styles.formCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View style={styles.formHeading}><View><Text style={[styles.formTitle, { color: colors.foreground }]}>{editingWaterTclId ? 'पाणी नमुने व टी. सी. एल. नोंद बदला' : 'नवीन पाणी नमुने व टी. सी. एल. नोंद'}</Text><Text style={[styles.formHint, { color: colors.mutedForeground }]}>चित्रातील नमुन्याप्रमाणे गावनिहाय साठा आणि नमुना माहिती भरा.</Text></View><Feather name="droplet" size={18} color={colors.primary} /></View>
-              <FormField label="गावाचे नाव *" value={waterVillageName} onChangeText={setWaterVillageName} placeholder="गाव" colors={colors} />
+              <View style={styles.formHeading}><View><Text style={[styles.formTitle, { color: colors.foreground }]}>{editingWaterTclId ? 'पाणी नमुने व ओ.टी. नोंद बदला' : 'नवीन पाणी नमुने व ओ.टी. नोंद'}</Text><Text style={[styles.formHint, { color: colors.mutedForeground }]}>चित्रातील नमुन्याप्रमाणे गावनिहाय साठा आणि नमुना माहिती भरा.</Text></View><Feather name="droplet" size={18} color={colors.primary} /></View>
+              <VillageChoiceField value={waterVillageName} villages={profile.villages} onChange={setWaterVillageName} colors={colors} />
               <View style={styles.twoColumns}>
                 <View style={styles.column}><FormField label="मागील शिल्लक" value={waterPreviousBalance} onChangeText={setWaterPreviousBalance} placeholder="संख्या" keyboardType="number-pad" colors={colors} /></View>
-                <View style={styles.column}><FormField label="चालू महिन्यात मिळालेला" value={waterReceivedThisMonth} onChangeText={setWaterReceivedThisMonth} placeholder="संख्या" keyboardType="number-pad" colors={colors} /></View>
+                <View style={styles.column}><FormField label="चालू महिन्यात मिळालेला साठा" value={waterReceivedThisMonth} onChangeText={setWaterReceivedThisMonth} placeholder="संख्या" keyboardType="number-pad" colors={colors} /></View>
               </View>
               <View style={styles.twoColumns}>
                 <View style={styles.column}><FormField label="एकूण साठा" value={waterTotalStock} onChangeText={setWaterTotalStock} placeholder="संख्या" keyboardType="number-pad" colors={colors} /></View>
@@ -908,21 +911,21 @@ export default function ReportsScreen() {
                 <View style={styles.column}><FormField label="पाणी नमुने - प्र." value={waterSamplesSent} onChangeText={setWaterSamplesSent} placeholder="संख्या" keyboardType="number-pad" colors={colors} /></View>
               </View>
               <View style={styles.twoColumns}>
-                <View style={styles.column}><FormField label="टी. सी. एल. - योग्य" value={waterTclSuitable} onChangeText={setWaterTclSuitable} placeholder="संख्या" keyboardType="number-pad" colors={colors} /></View>
-                <View style={styles.column}><FormField label="टी. सी. एल. - अयोग्य" value={waterTclUnsuitable} onChangeText={setWaterTclUnsuitable} placeholder="संख्या" keyboardType="number-pad" colors={colors} /></View>
+                <View style={styles.column}><FormField label="ओ.टी. - योग्य" value={waterTclSuitable} onChangeText={setWaterTclSuitable} placeholder="संख्या" keyboardType="number-pad" colors={colors} /></View>
+                <View style={styles.column}><FormField label="ओ.टी. - अयोग्य" value={waterTclUnsuitable} onChangeText={setWaterTclUnsuitable} placeholder="संख्या" keyboardType="number-pad" colors={colors} /></View>
               </View>
               <FormField label="शेरा" value={waterRemark} onChangeText={setWaterRemark} placeholder="अतिरिक्त माहिती" colors={colors} />
               <Pressable testID="save-water-tcl-report" onPress={saveWaterTclReport} style={({ pressed }) => [styles.saveButton, { backgroundColor: colors.primary, opacity: pressed ? 0.78 : 1 }]}><Feather name="check" size={17} color="#FFFFFF" /><Text style={styles.saveText}>{editingWaterTclId ? 'बदल जतन करा' : 'नोंद जतन करा'}</Text></Pressable>
             </View> : null}
             <View style={styles.entriesHeader}>
-              <View><Text style={[styles.entriesTitle, { color: colors.foreground }]}>गावनिहाय नोंदी</Text><Text style={[styles.entriesSubtitle, { color: colors.mutedForeground }]}>साठा, पाणी नमुने आणि टी. सी. एल. तपशील.</Text></View>
+              <View><Text style={[styles.entriesTitle, { color: colors.foreground }]}>गावनिहाय नोंदी</Text><Text style={[styles.entriesSubtitle, { color: colors.mutedForeground }]}>साठा, पाणी नमुने आणि ओ.टी. तपशील.</Text></View>
               <View style={[styles.countPill, { backgroundColor: colors.secondary }]}><Text style={[styles.countPillText, { color: colors.primary }]}>{waterTclReports.length}</Text></View>
             </View>
             {waterTclReports.length ? waterTclReports.map((entry, index) => (
               <WaterTclEntryCard key={entry.id} entry={entry} index={index} colors={colors} onEdit={() => editWaterTclReport(entry)} onRemove={() => Alert.alert('नोंद हटवायची?', `${entry.villageName} गावाची नोंद हटवायची आहे का?`, [{ text: 'रद्द करा', style: 'cancel' }, { text: 'हटवा', style: 'destructive', onPress: () => removeWaterTclReport(entry.id) }])} />
             )) : <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}><Feather name="droplet" size={24} color={colors.mutedForeground} /><Text style={[styles.emptyTitle, { color: colors.foreground }]}>अजून पाणी नमुना नोंद नाही</Text><Text style={[styles.emptyText, { color: colors.mutedForeground }]}>या sectionमधील + बटन दाबून गावाची नोंद जोडा.</Text></View>}
             {waterTclReports.length ? <View style={[styles.exportCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View style={styles.exportHeading}><View><Text style={[styles.exportTitle, { color: colors.foreground }]}>पाणी नमुने व टी. सी. एल. रिपोर्ट तयार आहे?</Text><Text style={[styles.exportText, { color: colors.mutedForeground }]}>नोंदी तपासल्यानंतर PDF शेअर करा.</Text></View><Feather name="file-text" size={20} color={colors.primary} /></View>
+              <View style={styles.exportHeading}><View><Text style={[styles.exportTitle, { color: colors.foreground }]}>पाणी नमुने व ओ.टी. रिपोर्ट तयार आहे?</Text><Text style={[styles.exportText, { color: colors.mutedForeground }]}>नोंदी तपासल्यानंतर PDF शेअर करा.</Text></View><Feather name="file-text" size={20} color={colors.primary} /></View>
               <Pressable testID="share-water-tcl-report-pdf" onPress={() => void exportWaterTclPdf()} style={({ pressed }) => [styles.exportButton, { backgroundColor: colors.primary, opacity: pressed ? 0.78 : 1 }]}><Feather name="share-2" size={15} color="#FFFFFF" /><Text style={styles.exportButtonText}>PDF शेअर करा</Text></Pressable>
             </View> : null}
             <View style={[styles.signatureArea, { backgroundColor: colors.secondary }]}>
@@ -938,6 +941,26 @@ export default function ReportsScreen() {
 
 function FormField({ label, value, onChangeText, placeholder, keyboardType, colors }: { label: string; value: string; onChangeText: (value: string) => void; placeholder: string; keyboardType?: 'default' | 'number-pad'; colors: ReturnType<typeof useColors> }) {
   return <View style={styles.field}><Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>{label}</Text><TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} keyboardType={keyboardType} placeholderTextColor={colors.mutedForeground} style={[styles.fieldInput, { backgroundColor: colors.background, borderColor: colors.input, color: colors.foreground }]} /></View>;
+}
+
+function VillageChoiceField({ value, villages, onChange, colors }: { value: string; villages: Village[]; onChange: (value: string) => void; colors: ReturnType<typeof useColors> }) {
+  const availableVillages = villages.filter((village) => village.name.trim());
+  return <View style={styles.field}>
+    <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>गावाचे नाव *</Text>
+    {availableVillages.length ? <View style={styles.villageChoices}>
+      {availableVillages.map((village) => {
+        const selected = value === village.name.trim();
+        return <Pressable key={village.id} accessibilityRole="radio" accessibilityState={{ selected }} accessibilityLabel={`${village.name} गाव निवडा`} onPress={() => onChange(village.name.trim())} style={({ pressed }) => [styles.villageChoice, { borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.secondary : colors.background, opacity: pressed ? 0.75 : 1 }]}>
+          <Feather name={selected ? 'check-circle' : 'circle'} size={16} color={selected ? colors.primary : colors.mutedForeground} />
+          <Text style={[styles.villageChoiceText, { color: selected ? colors.primary : colors.foreground }]}>{village.name.trim()}</Text>
+        </Pressable>;
+      })}
+    </View> : <View style={[styles.noVillagesNotice, { backgroundColor: colors.secondary }]}>
+      <Feather name="info" size={15} color={colors.primary} />
+      <Text style={[styles.noVillagesText, { color: colors.foreground }]}>प्रोफाइलमध्ये अजून गावे जोडलेली नाहीत. आधी प्रोफाइलमध्ये गावांची नोंद करा.</Text>
+    </View>}
+    {value ? <Text style={[styles.selectedVillageText, { color: colors.primary }]}>निवडलेले गाव: {value}</Text> : null}
+  </View>;
 }
 
 function GenderField({ value, onChange, colors }: { value: string; onChange: (value: string) => void; colors: ReturnType<typeof useColors> }) {
@@ -1042,7 +1065,7 @@ function WaterTclEntryCard({ entry, index, colors, onEdit, onRemove }: { entry: 
       <Text style={[styles.entryMeta, { color: colors.mutedForeground }]}>मागील: {entry.previousBalance || '—'} · मिळालेले: {entry.receivedThisMonth || '—'} · एकूण: {entry.totalStock || '—'}</Text>
       <Text style={[styles.entryMeta, { color: colors.mutedForeground }]}>खर्च: {entry.usedStock || '—'} · महिनाअखेर शिल्लक: {entry.closingBalance || '—'}</Text>
       <Text style={[styles.entryMeta, { color: colors.mutedForeground }]}>पाणी नमुने मा.: {entry.waterSamplesCollected || '—'} · प्र.: {entry.waterSamplesSent || '—'}</Text>
-      <Text style={[styles.entryMeta, { color: colors.mutedForeground }]}>टी. सी. एल. योग्य: {entry.tclSuitable || '—'} · अयोग्य: {entry.tclUnsuitable || '—'}</Text>
+      <Text style={[styles.entryMeta, { color: colors.mutedForeground }]}>ओ.टी. योग्य: {entry.tclSuitable || '—'} · अयोग्य: {entry.tclUnsuitable || '—'}</Text>
       {entry.remark ? <Text style={[styles.entryCause, { color: colors.mutedForeground }]}>शेरा: {entry.remark}</Text> : null}
     </View>
     <View style={styles.entryActions}>
@@ -1108,7 +1131,7 @@ function buildWaterTclReportHtml({ profile, waterTclReports, monthLabel }: { pro
     sumWaterValues(waterTclReports.map((entry) => entry.tclUnsuitable)),
   ];
   return `<!doctype html>
-    <html><head><meta charset="utf-8"><title>पाणी नमुने व टी. सी. एल. अहवाल - ${escapeHtml(monthLabel)}</title>
+    <html><head><meta charset="utf-8"><title>पाणी नमुने व ओ.टी. अहवाल - ${escapeHtml(monthLabel)}</title>
     <style>
       @page { size: A4 landscape; margin: 12mm; }
       body { font-family: Arial, sans-serif; color: #172033; margin: 0; }
@@ -1135,11 +1158,11 @@ function buildWaterTclReportHtml({ profile, waterTclReports, monthLabel }: { pro
         </div>
         <div class="month">महिना: ${escapeHtml(monthLabel)}</div>
       </div>
-      <h1>पाणी नमुने व टी. सी. एल. अहवाल</h1>
+      <h1>पाणी नमुने व ओ.टी. अहवाल</h1>
       <table>
         <thead>
           <tr>
-            <th rowspan="2">अ. नं.</th><th rowspan="2">गावाचे नाव</th><th rowspan="2">मागील<br>शिल्लक</th><th rowspan="2">चालू महिन्यात<br>मिळालेला</th><th rowspan="2">एकूण<br>साठा</th><th rowspan="2">खर्च<br>साठा</th><th rowspan="2">महिन्याखेर<br>शिल्लक साठा</th><th colspan="2">पाणी नमुने</th><th colspan="2">टी. सी. एल.</th><th rowspan="2">शेरा</th>
+            <th rowspan="2">अ. नं.</th><th rowspan="2">गावाचे नाव</th><th rowspan="2">मागील<br>शिल्लक</th><th rowspan="2">चालू महिन्यात<br>मिळालेला साठा</th><th rowspan="2">एकूण<br>साठा</th><th rowspan="2">खर्च<br>साठा</th><th rowspan="2">महिन्याखेर<br>शिल्लक साठा</th><th colspan="2">पाणी नमुने</th><th colspan="2">ओ.टी.</th><th rowspan="2">शेरा</th>
           </tr>
           <tr><th>मा.</th><th>प्र.</th><th>योग्य</th><th>अयोग्य</th></tr>
         </thead>
@@ -1445,6 +1468,12 @@ const styles = StyleSheet.create({
   field: { marginBottom: 11 },
   fieldLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 10, marginBottom: 6 },
   fieldInput: { height: 42, borderWidth: 1, borderRadius: 11, paddingHorizontal: 11, fontFamily: 'Inter_400Regular', fontSize: 13 },
+  villageChoices: { gap: 7, marginBottom: 5 },
+  villageChoice: { minHeight: 42, borderRadius: 11, borderWidth: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 11, gap: 8 },
+  villageChoiceText: { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
+  noVillagesNotice: { minHeight: 42, borderRadius: 11, paddingHorizontal: 11, paddingVertical: 9, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  noVillagesText: { flex: 1, fontFamily: 'Inter_400Regular', fontSize: 11, lineHeight: 16 },
+  selectedVillageText: { fontFamily: 'Inter_600SemiBold', fontSize: 10, marginTop: 3, marginBottom: 2 },
   genderChoices: { flexDirection: 'row', gap: 9 },
   eyeChoices: { flexDirection: 'row', gap: 9, marginBottom: 11 },
   eyeChoice: { flex: 1, minHeight: 42, borderRadius: 11, borderWidth: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 11, gap: 8 },
