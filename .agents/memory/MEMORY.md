@@ -1,0 +1,1 @@
+- [Conditional report views](jsx-conditional-refactor.md) — keep large report sections behind explicit active-view conditionals and typecheck immediately after wrapper edits.

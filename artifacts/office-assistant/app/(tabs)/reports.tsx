@@ -8,10 +8,22 @@ import { useAppData } from '@/context/AppDataContext';
 import type { CataractReportEntry, CataractSurgeryReportEntry, DeathReportEntry, LeprosyReportEntry, Profile, SputumSampleReportEntry, Village, WaterTclReportEntry } from '@/context/AppDataContext';
 import { useColors } from '@/hooks/useColors';
 
+type ReportKey = 'death' | 'cataract' | 'cataractSurgery' | 'sputum' | 'leprosy' | 'waterTcl';
+
+const reportTitles: Record<ReportKey, string> = {
+  death: 'मृत्यू अहवाल',
+  cataract: 'संशयीत मोतीबिंदू अहवाल',
+  cataractSurgery: 'मोतीबिंदू शस्त्रक्रिया अहवाल',
+  sputum: 'थुकी नमुने अहवाल',
+  leprosy: 'संशयीत कुष्ठरुग्ण अहवाल',
+  waterTcl: 'पाणी नमुने व ओ.टी. अहवाल',
+};
+
 export default function ReportsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { profile, deathReports, addDeathReport, updateDeathReport, removeDeathReport, cataractReports, addCataractReport, updateCataractReport, removeCataractReport, cataractSurgeryReports, addCataractSurgeryReport, updateCataractSurgeryReport, removeCataractSurgeryReport, sputumSampleReports, addSputumSampleReport, updateSputumSampleReport, removeSputumSampleReport, leprosyReports, addLeprosyReport, updateLeprosyReport, removeLeprosyReport, waterTclReports, addWaterTclReport, updateWaterTclReport, removeWaterTclReport, reportPeriod, updateReportPeriod } = useAppData();
+  const [activeReport, setActiveReport] = useState<ReportKey | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [personName, setPersonName] = useState('');
@@ -489,6 +501,48 @@ export default function ReportsScreen() {
     }
   };
 
+  const exportCombinedReportsPdf = async () => {
+    const html = buildCombinedReportsHtml({
+      profile,
+      monthLabel,
+      deathReports,
+      cataractReports,
+      cataractSurgeryReports,
+      sputumSampleReports,
+      leprosyReports,
+      waterTclReports,
+    });
+    try {
+      if (Platform.OS === 'web') {
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+          Alert.alert('PDF तयार करता आला नाही', 'कृपया browser मध्ये pop-up परवानगी द्या.');
+          return;
+        }
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        return;
+      }
+      const Print = await import('expo-print');
+      const Sharing = await import('expo-sharing');
+      const { uri } = await Print.printToFileAsync({ html });
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert('PDF तयार आहे', 'या device वर share सुविधा उपलब्ध नाही.');
+        return;
+      }
+      await Sharing.shareAsync(uri, {
+        mimeType: 'application/pdf',
+        dialogTitle: 'सहा राष्ट्रीय कार्यक्रमाचा आढावा PDF शेअर करा',
+        UTI: 'com.adobe.pdf',
+      });
+    } catch (error) {
+      console.error('Combined reports PDF export failed', error);
+      Alert.alert('PDF तयार करता आला नाही', 'कृपया पुन्हा प्रयत्न करा.');
+    }
+  };
+
   const exportPdf = async (action: 'share' | 'save') => {
     const html = buildDeathReportHtml({ profile, deathReports, monthLabel });
     try {
@@ -592,11 +646,52 @@ export default function ReportsScreen() {
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <KeyboardAwareScrollViewCompat bottomOffset={20} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Platform.OS === 'web' ? 118 : insets.bottom + 100 }}>
-        <ScreenHeader eyebrow="सहा राष्ट्रीय कार्यक्रमाचा आढावा" title="रिपोर्ट" subtitle="तुमच्या आरोग्य केंद्राचा मासिक अहवाल तयार करा." actionIcon={showForm ? 'x' : 'plus'} onAction={toggleForm} />
+        <ScreenHeader eyebrow={activeReport ? 'सहा राष्ट्रीय कार्यक्रमाचा आढावा' : 'विशेष सेक्शन'} title={activeReport ? reportTitles[activeReport] : 'रिपोर्ट'} subtitle={activeReport ? 'माहिती भरा, जतन करा आणि PDF शेअर करा.' : 'तुमच्या आरोग्य केंद्राचा मासिक अहवाल तयार करा.'} actionIcon={activeReport ? 'arrow-left' : undefined} onAction={activeReport ? () => setActiveReport(null) : undefined} />
         <View style={styles.body}>
+          {activeReport === null ? <>
+            <View style={[styles.sectionBanner, { backgroundColor: colors.secondary }]}>
+              <View style={[styles.sectionIcon, { backgroundColor: colors.card }]}><Feather name="folder" size={18} color={colors.primary} /></View>
+              <View style={styles.sectionCopy}><Text style={[styles.sectionEyebrow, { color: colors.primary }]}>SPECIAL SECTION</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>सहा राष्ट्रीय कार्यक्रमाचा आढावा</Text></View>
+              <Pressable testID="share-combined-reports-pdf" accessibilityRole="button" accessibilityLabel="सहा राष्ट्रीय कार्यक्रमाचा आढावा PDF शेअर करा" onPress={() => void exportCombinedReportsPdf()} style={({ pressed }) => [styles.sectionAddButton, { backgroundColor: colors.card, opacity: pressed ? 0.7 : 1 }]}><Feather name="file-text" size={17} color={colors.primary} /></Pressable>
+            </View>
+            <View style={[styles.reportPaper, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.paperTop}>
+                <View style={styles.paperHeading}>
+                  <Text style={[styles.facilityName, { color: colors.foreground }]}>प्राथमिक आरोग्य केंद्र {profile.primaryHealthCenter || '—'}</Text>
+                  <Text style={[styles.facilityMeta, { color: colors.mutedForeground }]}>तालुका: {profile.taluka || '—'}  जिल्हा: {profile.district || '—'}</Text>
+                  <Text style={[styles.facilityMeta, { color: colors.mutedForeground }]}>उपकेंद्र: {profile.subCenter || '—'}</Text>
+                </View>
+                <Text style={[styles.monthLabel, { color: colors.foreground }]}>{monthLabel}</Text>
+              </View>
+              <View style={[styles.reportTitleRule, { borderTopColor: colors.border }]} />
+              <Text style={[styles.reportTitle, { color: colors.foreground }]}>सहा राष्ट्रीय कार्यक्रमाचा आढावा</Text>
+              <Text style={[styles.reportSubtitle, { color: colors.mutedForeground }]}>रिपोर्ट निवडण्यासाठी खालील नावावर touch करा</Text>
+              <Pressable onPress={() => setShowPeriodEditor((value) => !value)} style={({ pressed }) => [styles.periodButton, { borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}>
+                <Feather name="calendar" size={14} color={colors.primary} />
+                <Text style={[styles.periodButtonText, { color: colors.primary }]}>महिना / वर्ष बदला</Text>
+              </Pressable>
+            </View>
+            <View style={[styles.reportMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <ReportMenuItem number="१" icon="file-text" title="मृत्यू अहवाल" count={deathReports.length} onPress={() => setActiveReport('death')} colors={colors} />
+              <ReportMenuItem number="२" icon="eye" title="संशयीत मोतीबिंदू अहवाल" count={cataractReports.length} onPress={() => setActiveReport('cataract')} colors={colors} />
+              <ReportMenuItem number="३" icon="check-circle" title="मोतीबिंदू शस्त्रक्रिया अहवाल" count={cataractSurgeryReports.length} onPress={() => setActiveReport('cataractSurgery')} colors={colors} />
+              <ReportMenuItem number="४" icon="activity" title="थुकी नमुने अहवाल" count={sputumSampleReports.length} onPress={() => setActiveReport('sputum')} colors={colors} />
+              <ReportMenuItem number="५" icon="heart" title="संशयीत कुष्ठरुग्ण अहवाल" count={leprosyReports.length} onPress={() => setActiveReport('leprosy')} colors={colors} />
+              <ReportMenuItem number="६" icon="droplet" title="पाणी नमुने व ओ.टी. अहवाल" count={waterTclReports.length} onPress={() => setActiveReport('waterTcl')} colors={colors} last />
+            </View>
+          </> : null}
+          {showPeriodEditor && activeReport === null ? <View style={[styles.periodEditor, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.twoColumns}>
+              <View style={styles.column}><FormField label="महिना (1-12)" value={periodMonth} onChangeText={setPeriodMonth} placeholder="उदा. 8" keyboardType="number-pad" colors={colors} /></View>
+              <View style={styles.column}><FormField label="वर्ष" value={periodYear} onChangeText={setPeriodYear} placeholder="उदा. 2026" keyboardType="number-pad" colors={colors} /></View>
+            </View>
+            <Pressable onPress={saveReportPeriod} style={({ pressed }) => [styles.periodSaveButton, { backgroundColor: colors.primary, opacity: pressed ? 0.78 : 1 }]}><Text style={styles.saveText}>Period जतन करा</Text></Pressable>
+          </View> : null}
+          {activeReport === 'death' ? <>
           <View style={[styles.sectionBanner, { backgroundColor: colors.secondary }]}>
-            <View style={[styles.sectionIcon, { backgroundColor: colors.card }]}><Feather name="folder" size={18} color={colors.primary} /></View>
-            <View style={styles.sectionCopy}><Text style={[styles.sectionEyebrow, { color: colors.primary }]}>REPORT SECTION 1</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>सहा राष्ट्रीय कार्यक्रमाचा आढावा</Text></View>
+            <View style={[styles.sectionIcon, { backgroundColor: colors.card }]}><Feather name="file-text" size={18} color={colors.primary} /></View>
+            <View style={styles.sectionCopy}><Text style={[styles.sectionEyebrow, { color: colors.primary }]}>REPORT 1 OF 6</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>मृत्यू अहवाल</Text></View>
+            <Pressable testID="add-death-report" accessibilityRole="button" accessibilityLabel="नवीन मृत्यू नोंद जोडा" onPress={toggleForm} style={({ pressed }) => [styles.sectionAddButton, { backgroundColor: colors.card, opacity: pressed ? 0.7 : 1 }]}><Feather name={showForm ? 'x' : 'plus'} size={17} color={colors.primary} /></Pressable>
           </View>
           <View style={[styles.reportPaper, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.paperTop}>
@@ -610,18 +705,7 @@ export default function ReportsScreen() {
             <View style={[styles.reportTitleRule, { borderTopColor: colors.border }]} />
             <Text style={[styles.reportTitle, { color: colors.foreground }]}>मृत्यू अहवाल</Text>
             <Text style={[styles.reportSubtitle, { color: colors.mutedForeground }]}>{deathReports.length} नोंदी या महिन्यात</Text>
-            <Pressable onPress={() => setShowPeriodEditor((value) => !value)} style={({ pressed }) => [styles.periodButton, { borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}>
-              <Feather name="calendar" size={14} color={colors.primary} />
-              <Text style={[styles.periodButtonText, { color: colors.primary }]}>महिना / वर्ष बदला</Text>
-            </Pressable>
           </View>
-          {showPeriodEditor ? <View style={[styles.periodEditor, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.twoColumns}>
-              <View style={styles.column}><FormField label="महिना (1-12)" value={periodMonth} onChangeText={setPeriodMonth} placeholder="उदा. 8" keyboardType="number-pad" colors={colors} /></View>
-              <View style={styles.column}><FormField label="वर्ष" value={periodYear} onChangeText={setPeriodYear} placeholder="उदा. 2026" keyboardType="number-pad" colors={colors} /></View>
-            </View>
-            <Pressable onPress={saveReportPeriod} style={({ pressed }) => [styles.periodSaveButton, { backgroundColor: colors.primary, opacity: pressed ? 0.78 : 1 }]}><Text style={styles.saveText}>Period जतन करा</Text></Pressable>
-          </View> : null}
           {showForm ? <View style={[styles.formCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.formHeading}><View><Text style={[styles.formTitle, { color: colors.foreground }]}>{editingId ? 'मृत्यू नोंद बदला' : 'नवीन मृत्यू नोंद'}</Text><Text style={[styles.formHint, { color: colors.mutedForeground }]}>{editingId ? 'बदल करून नोंद पुन्हा जतन करा.' : 'अहवालातील पुढील क्रमांकासाठी माहिती भरा.'}</Text></View><Feather name="edit-3" size={18} color={colors.primary} /></View>
             <FormField label="मृत व्यक्तीचे नाव *" value={personName} onChangeText={setPersonName} placeholder="पूर्ण नाव" colors={colors} />
@@ -664,7 +748,8 @@ export default function ReportsScreen() {
               <Text style={[styles.signatureText, { color: colors.mutedForeground }]}>उपकेंद्र: {profile.subCenter || '—'}</Text>
             </View>
           </View>
-          <View style={styles.secondReportSection}>
+          </> : null}
+          {activeReport === 'cataract' ? <View style={styles.secondReportSection}>
             <View style={[styles.sectionBanner, { backgroundColor: colors.secondary }]}>
               <View style={[styles.sectionIcon, { backgroundColor: colors.card }]}><Feather name="eye" size={18} color={colors.primary} /></View>
               <View style={styles.sectionCopy}><Text style={[styles.sectionEyebrow, { color: colors.primary }]}>REPORT SECTION 2</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>संशयीत मोतीबिंदू अहवाल</Text></View>
@@ -715,8 +800,8 @@ export default function ReportsScreen() {
               <View style={styles.signatureColumn}><Text style={[styles.signatureText, { color: colors.foreground }]}>सविनय सादर</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>वैद्यकीय अधिकारी</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>प्राथमिक आरोग्य केंद्र: {profile.primaryHealthCenter || '—'}</Text></View>
               <View style={[styles.signatureColumn, styles.signatureRight]}><Text style={[styles.signatureText, { color: colors.foreground }]}>नाव: {profile.name || '—'}</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>आरोग्य सेवक</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>उपकेंद्र: {profile.subCenter || '—'}</Text></View>
             </View>
-          </View>
-          <View style={styles.secondReportSection}>
+           </View> : null}
+          {activeReport === 'cataractSurgery' ? <View style={styles.secondReportSection}>
             <View style={[styles.sectionBanner, { backgroundColor: colors.secondary }]}>
               <View style={[styles.sectionIcon, { backgroundColor: colors.card }]}><Feather name="check-circle" size={18} color={colors.primary} /></View>
               <View style={styles.sectionCopy}><Text style={[styles.sectionEyebrow, { color: colors.primary }]}>REPORT SECTION 3</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>मोतीबिंदू शस्त्रक्रिया अहवाल</Text></View>
@@ -767,8 +852,8 @@ export default function ReportsScreen() {
               <View style={styles.signatureColumn}><Text style={[styles.signatureText, { color: colors.foreground }]}>सविनय सादर</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>वैद्यकीय अधिकारी</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>प्राथमिक आरोग्य केंद्र: {profile.primaryHealthCenter || '—'}</Text></View>
               <View style={[styles.signatureColumn, styles.signatureRight]}><Text style={[styles.signatureText, { color: colors.foreground }]}>नाव: {profile.name || '—'}</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>आरोग्य सेवक</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>उपकेंद्र: {profile.subCenter || '—'}</Text></View>
             </View>
-          </View>
-          <View style={styles.secondReportSection}>
+           </View> : null}
+          {activeReport === 'sputum' ? <View style={styles.secondReportSection}>
             <View style={[styles.sectionBanner, { backgroundColor: colors.secondary }]}>
               <View style={[styles.sectionIcon, { backgroundColor: colors.card }]}><Feather name="activity" size={18} color={colors.primary} /></View>
               <View style={styles.sectionCopy}><Text style={[styles.sectionEyebrow, { color: colors.primary }]}>REPORT SECTION 4</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>थुकी नमुने अहवाल</Text></View>
@@ -822,8 +907,8 @@ export default function ReportsScreen() {
               <View style={styles.signatureColumn}><Text style={[styles.signatureText, { color: colors.foreground }]}>सविनय सादर</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>वैद्यकीय अधिकारी</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>प्राथमिक आरोग्य केंद्र: {profile.primaryHealthCenter || '—'}</Text></View>
               <View style={[styles.signatureColumn, styles.signatureRight]}><Text style={[styles.signatureText, { color: colors.foreground }]}>नाव: {profile.name || '—'}</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>आरोग्य सेवक</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>उपकेंद्र: {profile.subCenter || '—'}</Text></View>
             </View>
-          </View>
-          <View style={styles.secondReportSection}>
+           </View> : null}
+          {activeReport === 'leprosy' ? <View style={styles.secondReportSection}>
             <View style={[styles.sectionBanner, { backgroundColor: colors.secondary }]}>
               <View style={[styles.sectionIcon, { backgroundColor: colors.card }]}><Feather name="heart" size={18} color={colors.primary} /></View>
               <View style={styles.sectionCopy}><Text style={[styles.sectionEyebrow, { color: colors.primary }]}>REPORT SECTION 5</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>संशयीत कुष्ठरुग्ण अहवाल</Text></View>
@@ -874,8 +959,8 @@ export default function ReportsScreen() {
               <View style={styles.signatureColumn}><Text style={[styles.signatureText, { color: colors.foreground }]}>सविनय सादर</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>वैद्यकीय अधिकारी</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>प्राथमिक आरोग्य केंद्र: {profile.primaryHealthCenter || '—'}</Text></View>
               <View style={[styles.signatureColumn, styles.signatureRight]}><Text style={[styles.signatureText, { color: colors.foreground }]}>नाव: {profile.name || '—'}</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>आरोग्य सेवक</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>उपकेंद्र: {profile.subCenter || '—'}</Text></View>
             </View>
-          </View>
-          <View style={styles.secondReportSection}>
+           </View> : null}
+          {activeReport === 'waterTcl' ? <View style={styles.secondReportSection}>
             <View style={[styles.sectionBanner, { backgroundColor: colors.secondary }]}>
               <View style={[styles.sectionIcon, { backgroundColor: colors.card }]}><Feather name="droplet" size={18} color={colors.primary} /></View>
               <View style={styles.sectionCopy}><Text style={[styles.sectionEyebrow, { color: colors.primary }]}>REPORT SECTION 6</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>पाणी नमुने व ओ.टी. अहवाल</Text></View>
@@ -932,7 +1017,7 @@ export default function ReportsScreen() {
               <View style={styles.signatureColumn}><Text style={[styles.signatureText, { color: colors.foreground }]}>सविनय सादर</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>वैद्यकीय अधिकारी</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>प्राथमिक आरोग्य केंद्र: {profile.primaryHealthCenter || '—'}</Text></View>
               <View style={[styles.signatureColumn, styles.signatureRight]}><Text style={[styles.signatureText, { color: colors.foreground }]}>नाव: {profile.name || '—'}</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>आरोग्य सेवक</Text><Text style={[styles.signatureText, { color: colors.mutedForeground }]}>उपकेंद्र: {profile.subCenter || '—'}</Text></View>
             </View>
-          </View>
+           </View> : null}
         </View>
       </KeyboardAwareScrollViewCompat>
     </View>
@@ -961,6 +1046,16 @@ function VillageChoiceField({ value, villages, onChange, colors }: { value: stri
     </View>}
     {value ? <Text style={[styles.selectedVillageText, { color: colors.primary }]}>निवडलेले गाव: {value}</Text> : null}
   </View>;
+}
+
+function ReportMenuItem({ number, icon, title, count, onPress, colors, last = false }: { number: string; icon: keyof typeof Feather.glyphMap; title: string; count: number; onPress: () => void; colors: ReturnType<typeof useColors>; last?: boolean }) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={`${title} उघडा`} onPress={onPress} style={({ pressed }) => [styles.reportMenuItem, !last && { borderBottomColor: colors.border, borderBottomWidth: 1 }, { opacity: pressed ? 0.72 : 1 }]}>
+    <View style={[styles.reportMenuNumber, { backgroundColor: colors.secondary }]}><Text style={[styles.reportMenuNumberText, { color: colors.primary }]}>{number}</Text></View>
+    <View style={[styles.reportMenuIcon, { backgroundColor: colors.background }]}><Feather name={icon} size={17} color={colors.primary} /></View>
+    <Text style={[styles.reportMenuTitle, { color: colors.foreground }]}>{title}</Text>
+    <View style={[styles.reportMenuCount, { backgroundColor: colors.secondary }]}><Text style={[styles.reportMenuCountText, { color: colors.primary }]}>{count}</Text></View>
+    <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+  </Pressable>;
 }
 
 function GenderField({ value, onChange, colors }: { value: string; onChange: (value: string) => void; colors: ReturnType<typeof useColors> }) {
@@ -1381,6 +1476,59 @@ function buildCataractSurgeryReportHtml({ profile, cataractSurgeryReports, month
     </body></html>`;
 }
 
+function bodyFromReportHtml(html: string) {
+  return html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1] || '';
+}
+
+function buildCombinedReportsHtml({
+  profile,
+  monthLabel,
+  deathReports,
+  cataractReports,
+  cataractSurgeryReports,
+  sputumSampleReports,
+  leprosyReports,
+  waterTclReports,
+}: {
+  profile: Profile;
+  monthLabel: string;
+  deathReports: DeathReportEntry[];
+  cataractReports: CataractReportEntry[];
+  cataractSurgeryReports: CataractSurgeryReportEntry[];
+  sputumSampleReports: SputumSampleReportEntry[];
+  leprosyReports: LeprosyReportEntry[];
+  waterTclReports: WaterTclReportEntry[];
+}) {
+  const pages = [
+    buildDeathReportHtml({ profile, deathReports, monthLabel }),
+    buildCataractReportHtml({ profile, cataractReports, monthLabel }),
+    buildCataractSurgeryReportHtml({ profile, cataractSurgeryReports, monthLabel }),
+    buildSputumReportHtml({ profile, sputumSampleReports, monthLabel }),
+    buildLeprosyReportHtml({ profile, leprosyReports, monthLabel }),
+    buildWaterTclReportHtml({ profile, waterTclReports, monthLabel }),
+  ].map(bodyFromReportHtml).join('<div class="report-page-break"></div>');
+  return `<!doctype html>
+    <html><head><meta charset="utf-8"><title>सहा राष्ट्रीय कार्यक्रमाचा आढावा - ${escapeHtml(monthLabel)}</title>
+    <style>
+      @page { size: A4 landscape; margin: 14mm; }
+      body { font-family: Arial, sans-serif; color: #172033; margin: 0; }
+      .report-page-break { page-break-after: always; }
+      .top { display: flex; justify-content: space-between; align-items: flex-start; }
+      .center { text-align: center; flex: 1; }
+      .facility { font-size: 18px; font-weight: 700; }
+      .meta { font-size: 12px; margin-top: 5px; }
+      .month { font-size: 13px; font-weight: 700; min-width: 130px; text-align: right; }
+      h1 { font-size: 20px; text-align: center; margin: 22px 0 15px; }
+      table { border-collapse: collapse; width: 100%; font-size: 9px; }
+      th, td { border: 1px solid #6f7785; padding: 6px 4px; text-align: center; vertical-align: middle; }
+      th { background: #eef2ff; font-weight: 700; }
+      td:nth-child(2), td:nth-child(5), td:nth-child(8), td:nth-child(9), td:nth-child(12) { text-align: left; }
+      .total-row td { background: #eef2ff; font-weight: 700; }
+      .signatures { display: flex; justify-content: space-between; margin-top: 48px; font-size: 12px; line-height: 1.7; }
+      .right { text-align: right; }
+    </style></head><body>${pages}</body></html>`;
+}
+
 const escapeHtml = (value: string) =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 
@@ -1447,6 +1595,14 @@ const styles = StyleSheet.create({
   sectionTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, marginTop: 3 },
   sectionAddButton: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   reportPaper: { borderRadius: 19, borderWidth: 1, padding: 16, marginBottom: 18 },
+  reportMenu: { borderRadius: 19, borderWidth: 1, paddingHorizontal: 13, marginBottom: 18 },
+  reportMenuItem: { minHeight: 66, flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 10 },
+  reportMenuNumber: { width: 26, height: 26, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  reportMenuNumberText: { fontFamily: 'Inter_700Bold', fontSize: 11 },
+  reportMenuIcon: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  reportMenuTitle: { flex: 1, fontFamily: 'Inter_600SemiBold', fontSize: 12, lineHeight: 17 },
+  reportMenuCount: { minWidth: 25, height: 25, borderRadius: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 },
+  reportMenuCountText: { fontFamily: 'Inter_700Bold', fontSize: 11 },
   paperTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   paperHeading: { flex: 1, paddingRight: 8 },
   facilityName: { fontFamily: 'Inter_700Bold', fontSize: 13 },
